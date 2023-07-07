@@ -23,6 +23,8 @@ void AppendControl(STRPTR buffer, APTR text_control);
 void HighlightString(STRPTR highlighted_string, STRPTR source);
 void ForEachLine(STRPTR search_string, void (*fnc)(STRPTR in_string, STRPTR out_string), APTR extra);
 
+void GetHighlights(STRPTR* buffer, STRPTR text);
+
 BOOL ReAllocMem(void** mem_ptr, ULONG cur_size, ULONG new_size);
 
 #endif //PATTERNS__UTILS_H_

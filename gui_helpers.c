@@ -5,6 +5,8 @@
 #include "gui_helpers.h"
 #include "utils.h"
 
+#include <stdio.h>
+
 #include <proto/exec.h>
 #include <libraries/mui.h>
 #include <proto/muimaster.h>
@@ -40,3 +42,5 @@ STRPTR ClearTextEditorMarkup(APTR editor) {
   DoMethod(editor, MUIM_TextEditor_InsertText, search_string, MUIV_TextEditor_InsertText_Top);
   return search_string;
 }
+
+

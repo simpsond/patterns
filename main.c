@@ -29,19 +29,22 @@ APTR quit_menu;
 APTR import_file_menu;
 APTR import_directory_menu;
 
+// Edit Menu items
+APTR copy_menu;
+APTR copy_matches_menu;
+APTR paste_menu;
+
 // Main window gadgets
 APTR glob_button;
 APTR glob_text;
 APTR search_text_editor;
 
-// Temp Buffer
-STRPTR highlight_buffer;
-ULONG highlight_buffer_size;
 
 void OnGlobItClick(void);
 void OnQuitMenu(void);
 void OnImportFileMenu(void);
 void OnImportDirectoryMenu(void);
+void OnCopyMatchesMenu(void);
 
 BOOL DialogGetFileSystemPath(enum FileDialogType type, STRPTR fname);
 
@@ -147,6 +150,18 @@ void CreateApplicationObject() {
             quit_menu = MenuitemObject, MUIA_Menuitem_Title, "Quit",
           End,
       End, // Project Menu Object
+      MUIA_Family_Child, MenuObject,
+        MUIA_Menu_Title, "Edit",
+          MUIA_Family_Child,
+            copy_menu = MenuitemObject, MUIA_Menuitem_Title, "Copy",
+          End,
+          MUIA_Family_Child,
+            copy_matches_menu = MenuitemObject, MUIA_Menuitem_Title, "Copy Matches",
+          End,
+          MUIA_Family_Child,
+            paste_menu = MenuitemObject, MUIA_Menuitem_Title, "Paste",
+          End,
+      End, // Edit Menu Object
     End, // End MenustripObject
     SubWindow, window = WindowObject,
       MUIA_Window_Title, "Patterns",
@@ -157,7 +172,9 @@ void CreateApplicationObject() {
         Child, HGroup,
         Child, glob_text = BetterStringObject, TextFrame, End,
         Child, glob_button = SimpleButton("GLOB IT!"), End,
-        Child, search_text_editor = TextEditorObject, StringFrame, MUIA_CycleChain, 1, MUIA_TextEditor_ExportHook, MUIV_TextEditor_ExportHook_NoStyle, End,
+        Child, search_text_editor = TextEditorObject, StringFrame, MUIA_CycleChain, 1,
+//        MUIA_TextEditor_ExportHook, MUIV_TextEditor_ExportHook_NoStyle,
+        End,
       End,
     End,
   End;
@@ -167,11 +184,12 @@ void CreateApplicationObject() {
  * Configure MUI hooks and bind to window controls
  */
 void ConfigureAndBind() {
-  static struct Hook GlobItClickHook, QuitMenuHook, ImportFileMenuHook, ImportDirectoryMenuHook;
+  static struct Hook GlobItClickHook, QuitMenuHook, ImportFileMenuHook, ImportDirectoryMenuHook, CopyMatchesMenuHook;
   GlobItClickHook.h_Entry = (HOOKFUNC)OnGlobItClick;
   QuitMenuHook.h_Entry = (HOOKFUNC)OnQuitMenu;
   ImportFileMenuHook.h_Entry = (HOOKFUNC)OnImportFileMenu;
   ImportDirectoryMenuHook.h_Entry = (HOOKFUNC)OnImportDirectoryMenu;
+  CopyMatchesMenuHook.h_Entry = (HOOKFUNC)OnCopyMatchesMenu;
 
   // Window Controls
   DoMethod(window,MUIM_Notify,MUIA_Window_CloseRequest,TRUE, app,2,MUIM_Application_ReturnID,MUIV_Application_ReturnID_Quit);
@@ -180,6 +198,8 @@ void ConfigureAndBind() {
   DoMethod(quit_menu, MUIM_Notify, MUIA_Menuitem_Trigger, MUIV_EveryTime, app, 2, MUIM_CallHook,  &QuitMenuHook);
   DoMethod(import_file_menu, MUIM_Notify, MUIA_Menuitem_Trigger, MUIV_EveryTime, app, 2, MUIM_CallHook,  &ImportFileMenuHook);
   DoMethod(import_directory_menu, MUIM_Notify, MUIA_Menuitem_Trigger, MUIV_EveryTime, app, 2, MUIM_CallHook,  &ImportDirectoryMenuHook);
+
+  DoMethod(copy_matches_menu, MUIM_Notify, MUIA_Menuitem_Trigger, MUIV_EveryTime, app, 2, MUIM_CallHook,  &CopyMatchesMenuHook);
 
   // Buttons
   DoMethod(glob_button, MUIM_Notify, MUIA_Pressed, FALSE, glob_button, 2, MUIM_CallHook, &GlobItClickHook);
@@ -199,11 +219,7 @@ void OnGlobItClick(void) {
 
   // Clear the next editor
   DoMethod(search_text_editor, MUIM_TextEditor_ClearText);
-
-//  highlight_buffer = AllocMem(1024, MEMF_CLEAR);
   ForEachLine(search_string, &ProcessGlobLine, pattern_string);
-
-//  FreeMem(highlight_buffer, 1024);
 }
 
 void OnQuitMenu(void) {
@@ -245,6 +261,15 @@ void OnImportFileMenu(void) {
     SetTextEditorContent(buffer, search_text_editor);
     FreeMem(buffer, length);
   }
+}
+
+void OnCopyMatchesMenu(void) {
+  STRPTR matches;
+  STRPTR exported_text = (STRPTR)DoMethod(search_text_editor, MUIM_TextEditor_ExportText);
+
+  GetHighlights(&matches, exported_text);
+  printf("matches:\n%s\n", matches);
+  FreeVec(matches);
 }
 /*************************************************************
  * End On X Event Handlers

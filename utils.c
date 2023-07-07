@@ -64,7 +64,8 @@ int CheckStringPattern(STRPTR pattern_string, STRPTR s_text) {
 void HighlightString(STRPTR highlighted_string, STRPTR source) {
   strcat(highlighted_string, "\033b");
   strcat(highlighted_string, source);
-  strcat(highlighted_string, "\033b");
+//  strcat(highlighted_string, "\033b");
+  strcat(highlighted_string, "\033n");
 }
 
 void AppendChar(STRPTR buffer, char c) {
@@ -167,4 +168,35 @@ BOOL ReAllocMem(void** mem_ptr, ULONG cur_size, ULONG new_size) {
   FreeMem(*mem_ptr, cur_size);
   *mem_ptr = new_buffer;
   return TRUE;
+}
+
+void GetHighlights(STRPTR* buffer, STRPTR text) {
+//  STRPTR exported_text = (STRPTR)DoMethod(text_control, MUIM_TextEditor_ExportText);
+  STRPTR mark = text;
+  STRPTR start_mark;
+  char the_marker[3] = "\033b";
+  ULONG match_length = 0;
+  ULONG match_count = 0;
+  ULONG buffer_offset = 0;
+  STRPTR new_buffer;
+
+  new_buffer = AllocVec(strlen(text), MEMF_CLEAR);
+
+  while((mark = (STRPTR)strstr(mark, the_marker))) {
+    mark+=2;
+    match_count++
+    if(match_count % 2 == 0) {
+      match_length = mark - start_mark - 2;
+      CopyMem(start_mark, new_buffer+ buffer_offset, match_length);
+      the_marker[1] = 'b';
+      buffer_offset += match_length;
+      new_buffer[buffer_offset] = '\n';
+      buffer_offset++;
+    } else {
+      start_mark = mark;
+      the_marker[1] = 'n';
+    }
+  }
+  FreeVec(text);
+  *(buffer) = new_buffer;
 }
